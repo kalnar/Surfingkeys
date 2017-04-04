@@ -100,18 +100,16 @@ var Service = (function() {
                 if (_message.repeats > conf.repeatThreshold) {
                     _message.repeats = conf.repeatThreshold;
                 }
-                self[_message.action](_message, _sender, _sendResponse);
+                if (_sender.tab) {
+                    self[_message.action](_message, _sender, _sendResponse);
+                }
             } else if (_message.toFrontend) {
-                try {
+                if (frontEndPorts[tid]) {
                     frontEndPorts[tid].postMessage(_message);
                     contentPorts[tid] = _port;
                     if (_message.ack) {
                         onResponseById[_message.id] = _sendResponse;
                     }
-                } catch (e) {
-                    chrome.tabs.executeScript(tid, {
-                        code: "createFrontEnd()"
-                    });
                 }
             } else if (_message.toContent) {
                 contentPorts[tid].postMessage(_message);
@@ -256,7 +254,7 @@ var Service = (function() {
 
     chrome.extension.onConnect.addListener(function(port) {
         var sender = port.sender;
-        if (sender.url === frontEndURL) {
+        if (sender.url === frontEndURL && sender.tab) {
             frontEndPorts[sender.tab.id] = port;
         }
         activePorts.push(port);
@@ -483,9 +481,7 @@ var Service = (function() {
     };
     self.getTabs = function(message, sender, sendResponse) {
         var tab = sender.tab;
-        var queryInfo = message.queryInfo || {
-            windowId: tab.windowId
-        };
+        var queryInfo = message.queryInfo || {};
         chrome.tabs.query(queryInfo, function(tabs) {
             tabs = _filterByTitleOrUrl(tabs, message.query);
             if (message.query && message.query.length) {
@@ -514,18 +510,32 @@ var Service = (function() {
         });
     };
     self.focusTab = function(message, sender, sendResponse) {
-        chrome.tabs.update(message.tab_id, {
-            active: true
-        });
+        if (message.window_id !== undefined && sender.tab.windowId !== message.window_id) {
+            chrome.windows.update(message.window_id, {
+                focused: true
+            }, function() {
+                chrome.tabs.update(message.tab_id, {
+                    active: true
+                });
+            });
+        } else {
+            chrome.tabs.update(message.tab_id, {
+                active: true
+            });
+        }
     };
     self.historyTab = function(message, sender, sendResponse) {
         if (tabHistory.length > 0) {
             historyTabAction = true;
-            tabHistoryIndex += message.backward ? -1 : 1;
-            if (tabHistoryIndex < 0) {
-                tabHistoryIndex = 0;
-            } else if (tabHistoryIndex >= tabHistory.length) {
-                tabHistoryIndex = tabHistory.length - 1;
+            if (message.hasOwnProperty("index")) {
+                tabHistoryIndex = (parseInt(message.index) + tabHistory.length) % tabHistory.length;
+            } else {
+                tabHistoryIndex += message.backward ? -1 : 1;
+                if (tabHistoryIndex < 0) {
+                    tabHistoryIndex = 0;
+                } else if (tabHistoryIndex >= tabHistory.length) {
+                    tabHistoryIndex = tabHistory.length - 1;
+                }
             }
             var tab_id = tabHistory[tabHistoryIndex];
             chrome.tabs.update(tab_id, {
@@ -600,6 +610,23 @@ var Service = (function() {
             });
         });
     };
+
+    function _closeTab(s, n) {
+        chrome.tabs.query({currentWindow: true}, function(tabs) {
+            tabs = tabs.map(function(e) { return e.id; });
+            chrome.tabs.remove(tabs.slice(s.tab.index + (n < 0 ? n : 1),
+                                          s.tab.index + (n < 0 ? 0 : 1 + n)));
+        });
+    };
+
+    self.closeTabLeft  = function(message, sender, senderResponse) { _closeTab(sender, -message.repeats)};
+    self.closeTabRight = function(message, sender, senderResponse) { _closeTab(sender, message.repeats); };
+    self.closeTabsToLeft = function(message, sender, senderResponse) { _closeTab(sender, -sender.tab.index); };
+    self.closeTabsToRight = function(message, sender, senderResponse) {
+        chrome.tabs.query({currentWindow: true},
+                          function(tabs) { _closeTab(sender, tabs.length - sender.tab.index); });
+    };
+
     self.muteTab = function(message, sender, sendResponse) {
         var tab = sender.tab;
         chrome.tabs.update(tab.id, {
@@ -1002,7 +1029,14 @@ var Service = (function() {
         } else if (type === 'H') {
             chrome.history.deleteUrl({url: uid}, cb);
         } else if (type === 'T') {
-            chrome.tabs.remove(parseInt(uid), cb);
+            uid = uid.split(":").map(function(u) {
+                return parseInt(u);
+            });
+            chrome.windows.update(uid[0], {
+                focused: true
+            }, function() {
+                chrome.tabs.remove(uid[1], cb);
+            });
         } else if (type === 'M') {
             loadSettings('marks', function(data) {
                 delete data.marks[uid];

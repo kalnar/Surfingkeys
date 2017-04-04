@@ -40,7 +40,7 @@ function parseCommand(cmdline) {
 }
 
 RUNTIME = function(action, args) {
-    var actionsRepeatBackground = ['closeTab', 'nextTab', 'previousTab', 'moveTab', 'reloadTab', 'setZoom'];
+    var actionsRepeatBackground = ['closeTab', 'nextTab', 'previousTab', 'moveTab', 'reloadTab', 'setZoom', 'closeTabLeft','closeTabRight'];
     (args = args || {}).action = action;
     if (actionsRepeatBackground.indexOf(action) !== -1) {
         // if the action can only be repeated in background, pass repeats to background with args,
@@ -79,7 +79,7 @@ function autocmd(domain, jscode) {
 function _parseAnnotation(ag) {
     var annotations = ag.annotation.match(/#(\d+)(.*)/);
     if (annotations !== null) {
-        ag.feature_group = annotations[1];
+        ag.feature_group = parseInt(annotations[1]);
         ag.annotation = annotations[2];
     }
     return ag;

@@ -169,7 +169,8 @@ var Insert = (function(mode) {
                 return emoji.indexOf(query) !== -1;
             }).slice(0, 5).map(function(emoji) {
                 var ee = emoji.split("\t");
-                return "<div><span>{0}</span>{1}</div>".format(ee[0], ee[1]);
+                var parsedUnicodeEmoji = String.fromCodePoint.apply(null, ee[0].split(','));
+                return "<div><span>{0}</span>{1}</div>".format(parsedUnicodeEmoji, ee[1]);
             }).join("");
 
             if (emojiMatched === "") {
@@ -185,9 +186,14 @@ var Insert = (function(mode) {
                     br = Visual.getCursorPixelPos();
                     Visual.hideCursor();
                 }
+                var top = br.top + br.height + 4;
+                if (window.innerHeight - top < _emojiDiv.height()) {
+                    top = br.top - _emojiDiv.height();
+                }
+
                 _emojiDiv.css('position', "fixed");
                 _emojiDiv.css('left', br.left);
-                _emojiDiv.css('top', br.top + br.height + 4 + document.body.scrollTop);
+                _emojiDiv.css('top', top);
             }
         }
     }
@@ -198,7 +204,7 @@ var Insert = (function(mode) {
             mask = document.createElement("div"),
             span = document.createElement("span");
         mask.style.font = css.font;
-        mask.style.position = "absolute";
+        mask.style.position = "fixed";
         mask.innerHTML = input.value;
         mask.style.left = (input.clientLeft + br.left) + "px";
         mask.style.top = (input.clientTop + br.top) + "px";

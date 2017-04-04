@@ -49,7 +49,8 @@ var Front = (function(mode) {
                     _tabs.trie = null;
                 } else if (_tabs.trie.meta) {
                     RUNTIME('focusTab', {
-                        tab_id: _tabs.trie.meta
+                        tab_id: _tabs.trie.meta.id,
+                        window_id: _tabs.trie.meta.windowId
                     });
                     self.hidePopup();
                     _tabs.trie = null;
@@ -164,7 +165,7 @@ var Front = (function(mode) {
         var tabstr = "<div class=sk_tab style='max-width: {0}px'>".format(window.innerWidth - 50);
         var items = tabs.forEach(function(t, i) {
             var tab = $(tabstr);
-            _tabs.trie.add(hintLabels[i].toLowerCase(), t.id);
+            _tabs.trie.add(hintLabels[i].toLowerCase(), t);
             tab.html("<div class=sk_tab_hint>{0}</div><div class=sk_tab_wrap><div class=sk_tab_icon><img src='{1}'></div><div class=sk_tab_title>{2}</div></div>".format(hintLabels[i], t.favIconUrl, htmlEncode(t.title)));
             tab.data('url', t.url);
             tabs_fg.append(tab);
@@ -416,12 +417,16 @@ var Front = (function(mode) {
         }
     };
     runtime.on('hideKeystroke', self.hideKeystroke);
+    Visual.mappings.add("y", {
+        annotation: "Yank a word(w) or line(l) or sentence(s) or paragraph(p)",
+        feature_group: 9
+    });
     self.showKeystroke = function(key, mode) {
         if (runtime.conf.richHintsForKeystroke) {
             _key += key;
-            var root = window[mode].mappings.find(_key);
+            var root = window[mode].mappings.find(_key), words = _key;
             if (root) {
-                var words = root.getWords("", true).sort().map(function(w) {
+                words = root.getWords("", true).sort().map(function(w) {
                     var meta = root.find(w).meta;
                     if (meta.annotation || mode !== "Normal") {
                         return "<div><span class=kbd-span><kbd>{0}<span class=candidates>{1}</span></kbd></span><span class=annotation>{2}</span></div>".format(_key, w, meta.annotation);
@@ -432,9 +437,9 @@ var Front = (function(mode) {
                 if (words.length === 0) {
                     words = _key;
                 }
-                _richKeystroke.html(words).show();
-                self.flush();
             }
+            _richKeystroke.html(words).show();
+            self.flush();
         } else {
             if (keystroke.is(':animated')) {
                 keystroke.finish()

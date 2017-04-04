@@ -14,14 +14,8 @@ function previewMarkdown(mk) {
     }
 }
 
-$(document).on('surfingkeys:frontendReady', function(e) {
-    Front.getContentFromClipboard(function(response) {
-        previewMarkdown(response.data);
-    });
-});
-
-mapkey('sm', 'Edit markdown source', function() {
+mapkey('sm', '#99Edit markdown source', function() {
     Front.showEditor(markdown_code, previewMarkdown, 'markdown');
 });
 
-map('i', 'sm');
+var renderDataFromClipboard = previewMarkdown;

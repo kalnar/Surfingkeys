@@ -187,6 +187,7 @@ mapkey('G', '#2Scroll to the bottom of the page', 'Normal.scroll("bottom")', {re
 mapkey('0', '#2Scroll all the way to the left', 'Normal.scroll("leftmost")', {repeatIgnore: true});
 mapkey('$', '#2Scroll all the way to the right', 'Normal.scroll("rightmost")', {repeatIgnore: true});
 mapkey('cs', '#2Change scroll target', 'Normal.changeScrollTarget()');
+mapkey('cS', '#2Reset scroll target', 'Normal.resetScrollTarget()');
 mapkey('f', '#1Open a link, press SHIFT to flip hints if they are overlapped.', 'Hints.create("", Hints.dispatchMouseClick)');
 mapkey('af', '#1Open a link in new tab', 'Hints.create("", Hints.dispatchMouseClick, {tabbed: true})');
 mapkey('gf', '#1Open a link in non-active new tab', 'Hints.create("", Hints.dispatchMouseClick, {tabbed: true, active: false})');
@@ -218,6 +219,8 @@ mapkey('<Alt-p>', '#3pin/unpin current tab', 'RUNTIME("togglePinTab")');
 mapkey('<Alt-m>', '#3mute/unmute current tab', 'RUNTIME("muteTab")');
 mapkey('B', '#4Go one tab history back', 'RUNTIME("historyTab", {backward: true})', {repeatIgnore: true});
 mapkey('F', '#4Go one tab history forward', 'RUNTIME("historyTab", {backward: false})', {repeatIgnore: true});
+mapkey('gT', '#4Go to first activated tab', 'RUNTIME("historyTab", {index: 0})', {repeatIgnore: true});
+mapkey('gt', '#4Go to last activated tab', 'RUNTIME("historyTab", {index: -1})', {repeatIgnore: true});
 mapkey('S', '#4Go back in history', 'history.go(-1)', {repeatIgnore: true});
 mapkey('D', '#4Go forward in history', 'history.go(1)', {repeatIgnore: true});
 mapkey('r', '#4Reload the page', 'RUNTIME("reloadTab", { nocache: false })');
@@ -309,6 +312,7 @@ command('listQueueURLs', 'list URLs in queue waiting for open', function(args) {
     });
 });
 mapkey('v', '#9Toggle visual mode', 'Visual.toggle()');
+mapkey('V', '#9Restore visual mode', 'Visual.restore()');
 mapkey('/', '#9Find in current page', 'Front.openFinder()');
 mapkey('*', '#9Find selected text in current page', function() {
     Visual.star();
@@ -463,9 +467,13 @@ mapkey('g?', '#4Reload current page without query string(all parts after questio
     window.location.href = window.location.href.replace(/\?[^\?]*$/, '');
 });
 mapkey('gU', '#4Go to root of current URL hierarchy', 'window.location.href = window.location.origin');
+mapkey('gxt', 'Close tab on left', 'RUNTIME("closeTabLeft")');
+mapkey('gxT', 'Close tab on right', 'RUNTIME("closeTabRight")');
+mapkey('gx0', 'Close all tabs on left', 'RUNTIME("closeTabsToLeft")');
+mapkey('gx$', 'Close all tabs on right', 'RUNTIME("closeTabsToRight")');
 mapkey('se', '#11Edit Settings', 'tabOpenLink("/pages/options.html")');
 mapkey('si', '#12Open Chrome Inspect', 'tabOpenLink("chrome://inspect/#devices")');
-mapkey('sm', '#11Preview markdown', 'tabOpenLink("/pages/github-markdown.html")');
+mapkey('sm', '#11Preview markdown', 'tabOpenLink("/pages/markdown.html")');
 mapkey('<Ctrl-Alt-d>', '#11Mermaid diagram generator', 'tabOpenLink("/pages/mermaid.html")');
 mapkey('su', '#4Edit current URL with vim editor', function() {
     Front.showEditor(window.location.href, function(data) {
@@ -480,7 +488,7 @@ mapkey(';p', '#7Paste html on current page', function() {
     });
 });
 mapkey(';q', '#14Insert jquery library on current page', 'Normal.insertJS("//ajax.aspnetcdn.com/ajax/jQuery/jquery-2.1.4.min.js")');
-mapkey('gt', 'Translate selected text with google', function() {
+mapkey(';t', 'Translate selected text with google', function() {
     searchSelectedWith('https://translate.google.com/?hl=en#auto/en/', false, false, '');
 });
 
